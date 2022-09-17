@@ -1,6 +1,6 @@
 <template>
   <div class="axios-container page-container">
-    <div class="page-title">Axios Test Page</div>
+    <div class="page-title">Npm Package Info Page</div>
     <div class="user-info-container">
       <el-card class="box-card">
         <template #header>

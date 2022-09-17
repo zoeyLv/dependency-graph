@@ -6,8 +6,9 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'home',
-      component: HomeView,
+      name: 'Npm',
+      // component: HomeView,
+      component: () => import('../views/Axios.vue'), // 懒加载 Axios 组件      
     },
     {
       path: '/about',
@@ -17,11 +18,11 @@ const router = createRouter({
       // which is lazy-loaded when the route is visited.
       component: () => import('../views/AboutView.vue'),
     },
-    {
-      path: '/axios',
-      name: 'Axios',
-      component: () => import('../views/Axios.vue'), // 懒加载 Axios 组件
-    },
+    // {
+    //   path: '/axios',
+    //   name: 'Axios',
+    //   component: () => import('../views/Axios.vue'), // 懒加载 Axios 组件
+    // },
   ],
 })
 
