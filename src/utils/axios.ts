@@ -1,11 +1,11 @@
-import Axios, { AxiosInstance } from 'axios'
+import Axios, { type AxiosInstance } from 'axios'
 import { ElMessage } from 'element-plus'
 
 const baseURL = 'https://unpkg.com/'
 
 const axios: AxiosInstance = Axios.create({
   baseURL,
-  timeout: 20000 // 请求超时 20s
+  timeout: 20000, // 请求超时 20s
 })
 
 // 前置拦截器（发起请求之前的拦截）
