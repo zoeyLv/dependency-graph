@@ -19,7 +19,13 @@
           </div>
         </template>
         <div class="info-list-box" v-loading="loading">
-          <div class="text item" v-if="packageInfo?.name">
+          <div class="text item">dependencies:</div>
+          <ul>
+            <li v-for="(value, key) in packageInfo" :key="key">
+              {{ key }}: {{ value }}
+            </li>
+          </ul>
+          <!-- <div class="text item" v-if="packageInfo?.name">
             name: {{ packageInfo?.name }}
           </div>
           <div class="text item" v-if="packageInfo?.version">
@@ -27,7 +33,7 @@
           </div>
           <div class="text item" v-if="packageInfo?.dependencies">
             dependencies: {{ packageInfo?.dependencies }}
-          </div>
+          </div> -->
         </div>
       </el-card>
     </div>
@@ -37,6 +43,7 @@
 <script lang="ts">
 import { defineComponent, ref, type Ref } from 'vue'
 import axios from '../utils/axios'
+import { downloadUnpkg, downloadHttp } from '../utils/download'
 
 export default defineComponent({
   name: 'AxiosPage',
@@ -45,20 +52,87 @@ export default defineComponent({
     const packageInfo: Ref = ref(null)
     const loading = ref(false)
 
+    // 存储下载的packages
+    let packages = {};
+
+    // 存储正在进行的requests
+    let requests = new Set();
+    
     const getPackageInfo = () => {
+
+      packages = {};
+      requests = new Set();
+
       loading.value = true
       console.log('user input', input1.value)
-      axios
-        .get(input1.value + '/package.json')
-        .then((response) => {
-          console.log('response: ', response.data)
-          packageInfo.value = response.data
-          loading.value = false
-        })
-        .catch((error) => {
-          loading.value = false
-          console.error(error)
-        })
+      run({ packageName: input1.value })
+      // axios
+      //   .get(input1.value + '/package.json')
+      //   .then((response) => {
+      //     console.log('response: ', response.data)
+      //     packageInfo.value = response.data
+      //     loading.value = false
+      //   })
+      //   .catch((error) => {
+      //     loading.value = false
+      //     console.error(error)
+      //   })
+    }
+
+   
+
+    const run = async (pkg) => {
+      if (packages[pkg.packageName] || requests.has(pkg.packageName)) {
+        return;
+      }
+      requests.add(pkg.packageName);
+      // TODO: 确定是用 downloadHttp 还是 downloadUnpkg
+
+      if (pkg.url) {
+        axios.get(downloadHttp(pkg.packageName, pkg.url))
+          .then((response) => {
+            if (response.data) {
+              const packageJson = JSON.parse(atob(response.data.content));
+              next(pkg, packageJson);
+            }
+          })
+          .catch((error) => {
+            loading.value = false
+            console.error(error)
+          });
+      } else {
+        axios.get(downloadUnpkg(pkg.packageName, pkg.version))
+          .then((response) => {
+            if (response.data) {
+              const packageJson = response.data;
+              next(pkg, packageJson);
+            }
+          })
+          .catch((error) => {
+              loading.value = false
+              console.error(error)
+            });
+      }
+    }
+
+     const next = (pkg, packageJson) => {
+      requests.delete(pkg.packageName);
+      const key = pkg.packageName + (pkg.version ? `@${pkg.version}` : '')
+      packages[key] = formatData(packageJson);
+      packageJson.dependencies &&
+        Object.keys(packageJson.dependencies).map((dependency) => {
+          let value = packageJson.dependencies[dependency];
+          run({ packageName: dependency, version: value });
+        });
+      if (requests.size === 0) {
+        loading.value = false
+        packageInfo.value = packages
+      }
+    }
+
+    const formatData = (data) => {
+      const { version, dependencies } = data;
+      return { version, dependencies };
     }
 
     return {
