@@ -82,6 +82,7 @@ export default defineComponent({
    
 
     const run = async (pkg) => {
+      // 如果已经找到，或者正在查找，直接返回
       if (packages[pkg.packageName] || requests.has(pkg.packageName)) {
         return;
       }
@@ -115,14 +116,14 @@ export default defineComponent({
       }
     }
 
-     const next = (pkg, packageJson) => {
+    const next = (pkg, packageJson) => {
       requests.delete(pkg.packageName);
       const key = pkg.packageName + (pkg.version ? `@${pkg.version}` : '')
       packages[key] = formatData(packageJson);
+      // 递归查找
       packageJson.dependencies &&
         Object.keys(packageJson.dependencies).map((dependency) => {
-          let value = packageJson.dependencies[dependency];
-          run({ packageName: dependency, version: value });
+          run({ packageName: dependency, version: packageJson.dependencies[dependency] });
         });
       if (requests.size === 0) {
         loading.value = false
