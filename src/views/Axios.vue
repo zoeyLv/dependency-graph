@@ -79,8 +79,6 @@ export default defineComponent({
       //   })
     }
 
-   
-
     const run = async (pkg) => {
       // 如果已经找到，或者正在查找，直接返回
       if (packages[pkg.packageName] || requests.has(pkg.packageName)) {
@@ -88,9 +86,9 @@ export default defineComponent({
       }
       requests.add(pkg.packageName);
       // TODO: 确定是用 downloadHttp 还是 downloadUnpkg
-
-      if (pkg.url) {
-        axios.get(downloadHttp(pkg.packageName, pkg.url))
+      const type = extractType(pkg);
+      if(type === 'https') {
+        axios.get(downloadHttp(pkg.packageName, pkg.version))
           .then((response) => {
             if (response.data) {
               const packageJson = JSON.parse(atob(response.data.content));
@@ -99,9 +97,10 @@ export default defineComponent({
           })
           .catch((error) => {
             loading.value = false
+            packageInfo.value = null
             console.error(error)
           });
-      } else {
+      } else if(type === 'semver') {
         axios.get(downloadUnpkg(pkg.packageName, pkg.version))
           .then((response) => {
             if (response.data) {
@@ -111,8 +110,17 @@ export default defineComponent({
           })
           .catch((error) => {
               loading.value = false
+              packageInfo.value = null
               console.error(error)
-            });
+          });
+      }
+    }
+
+    const extractType = pkg => {
+      if(pkg.version?.match(/(^https|^git|^git\+https|^git\+ssh)\:\/\//)) {
+        return 'https'
+      } else {
+        return 'semver'
       }
     }
 
