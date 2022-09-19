@@ -81,10 +81,11 @@ export default defineComponent({
 
     const run = async (pkg) => {
       // 如果已经找到，或者正在查找，直接返回
-      if (packages[pkg.packageName] || requests.has(pkg.packageName)) {
+      const key = generateKey(pkg)
+      if (packages[key] || requests.has(key)) {
         return;
       }
-      requests.add(pkg.packageName);
+      requests.add(key);
       // TODO: 确定是用 downloadHttp 还是 downloadUnpkg
       const type = extractType(pkg);
       if(type === 'https') {
@@ -125,8 +126,8 @@ export default defineComponent({
     }
 
     const next = (pkg, packageJson) => {
-      requests.delete(pkg.packageName);
-      const key = pkg.packageName + (pkg.version ? `@${pkg.version}` : '')
+      const key = generateKey(pkg);
+      requests.delete(key);
       packages[key] = formatData(packageJson);
       // 递归查找
       packageJson.dependencies &&
@@ -136,12 +137,17 @@ export default defineComponent({
       if (requests.size === 0) {
         loading.value = false
         packageInfo.value = packages
+        console.log(packages)
       }
     }
 
     const formatData = (data) => {
       const { version, dependencies } = data;
       return { version, dependencies };
+    }
+
+    const generateKey = pkg => {
+      return pkg.packageName + (pkg.version ? `@${pkg.version}` : '')
     }
 
     return {
